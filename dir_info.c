@@ -24,7 +24,7 @@ int dir_size(char *path){
     return count;
 }
 
-void list_dir(char *path){
+void list_dir(char *path, int depth){
     DIR *d = opendir(path);
     struct dirent *f = readdir(d);
     while(f){
@@ -41,10 +41,10 @@ void list_dir(char *path){
             perms[8 - i] = (s->st_mode >> (0 + i)) % 2 ? 'x' : '-';
         }
 
-        printf("%c%s \t %-60s \t\t %5lld B\n", f->d_type == DT_DIR ? 'd' : '-', perms, path_cpy, s->st_size);
+        printf("%c%s %.*s \t %-60s \t\t %.*s %5lld B\n", f->d_type == DT_DIR ? 'd' : '-', perms,  depth, "\t\t\t\t\t", path_cpy, 5-depth, "\t\t\t\t\t", s->st_size);
         free(perms);
         if(f->d_type == DT_DIR && strcmp(".", f->d_name) && strcmp("..", f->d_name)){
-            list_dir(strcat(path_cpy, "/"));
+            list_dir(strcat(path_cpy, "/"), depth+1);
         }
         free(path_cpy);
         free(s);
@@ -55,7 +55,7 @@ void list_dir(char *path){
 
 int main(){
   // printf("statistics for directory: . \n");
-  printf("total directory size: %d \n", dir_size("./"));
-  list_dir("./");
+  // printf("total directory size: %d \n", dir_size("./"));
+  list_dir("./", 0);
   return 0;
 }
