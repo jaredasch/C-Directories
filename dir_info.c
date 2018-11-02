@@ -31,6 +31,10 @@ int dir_size(char *path, char RECURSIVE){
 
 void list_dir(char *path, int depth){
     DIR *d = opendir(path);
+    if(!d){
+        printf("Invald directory %s\n", path);
+        return;
+    }
     struct dirent *f = readdir(d);
     while(f){
         char *path_cpy = malloc(strlen(path) + strlen(f->d_name) + 10);
@@ -58,10 +62,18 @@ void list_dir(char *path, int depth){
     closedir(d);
 }
 
-int main(){
+int main(int argc, char *argv[]){
   // printf("statistics for directory: . \n");
-  printf("Total directory size (non-recursive): %d \n", dir_size("./", 0));
-  printf("Total directory size (recursive): %d \n", dir_size("./", 1));
-  list_dir("./", 0);
+  char* dir = malloc(100);
+  if (argc <= 1){
+      printf("Enter a directory to look into: ");
+      fgets(dir, 100, stdin);
+      dir[strlen(dir)-1] = 0; // Set \n to NULL
+  } else {
+      dir = argv[1];
+  }
+  printf("Total directory size (non-recursive): %d \n", dir_size(dir, 0));
+  // printf("Total directory size (recursive): %d \n", dir_size(dir, 1));
+  list_dir(dir, 0);
   return 0;
 }
