@@ -6,29 +6,34 @@
 #include <time.h>
 #include <string.h>
 
-int dir_size(char *path){
-    int count = 0;
-    DIR * d = opendir(path);
-    struct dirent * f = readdir(d);
+int dir_size(char *path, char RECURSIVE){
+    int size = 0;
+    DIR *d = opendir(path);
+    struct dirent *f = readdir(d);
     while(f){
-        char *path_cpy = malloc(strlen(path));
+        char *path_cpy = malloc(strlen(path) + strlen(f->d_name) + 10);
         strcat(strcpy(path_cpy, path), f->d_name);
         struct stat *s = malloc(sizeof(struct stat));
         stat(path_cpy, s);
 
-        struct stat *b = malloc(sizeof(struct stat));
-        stat(f->d_name,b);
-        count += b->st_size;
+        if(RECURSIVE && f->d_type == DT_DIR && strcmp(".", f->d_name) && strcmp("..", f->d_name)){
+            size += dir_size(strcat(path_cpy, "/"), RECURSIVE);
+        } else {
+            size += s->st_size;
+        }
         f = readdir(d);
+        free(path_cpy);
+        free(s);
     }
-    return count;
+    closedir(d);
+    return size;
 }
 
 void list_dir(char *path, int depth){
     DIR *d = opendir(path);
     struct dirent *f = readdir(d);
     while(f){
-        char *path_cpy = malloc(100);
+        char *path_cpy = malloc(strlen(path) + strlen(f->d_name) + 10);
         strcat(strcpy(path_cpy, path), f->d_name);
         struct stat *s = malloc(sizeof(struct stat));
         stat(path_cpy, s);
@@ -41,7 +46,7 @@ void list_dir(char *path, int depth){
             perms[8 - i] = (s->st_mode >> (0 + i)) % 2 ? 'x' : '-';
         }
 
-        printf("%c%s %.*s \t %-60s \t\t %.*s %5lld B\n", f->d_type == DT_DIR ? 'd' : '-', perms,  depth, "\t\t\t\t\t", path_cpy, 5-depth, "\t\t\t\t\t", s->st_size);
+        printf("%c%s %10lld B %.*s %-60s\n", f->d_type == DT_DIR ? 'd' : '-', perms,  s->st_size, depth, "\t\t\t\t\t\t\t\t\t", path_cpy);
         free(perms);
         if(f->d_type == DT_DIR && strcmp(".", f->d_name) && strcmp("..", f->d_name)){
             list_dir(strcat(path_cpy, "/"), depth+1);
@@ -55,7 +60,8 @@ void list_dir(char *path, int depth){
 
 int main(){
   // printf("statistics for directory: . \n");
-  // printf("total directory size: %d \n", dir_size("./"));
+  printf("Total directory size (non-recursive): %d \n", dir_size("./", 0));
+  printf("Total directory size (recursive): %d \n", dir_size("./", 1));
   list_dir("./", 0);
   return 0;
 }
